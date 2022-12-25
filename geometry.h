@@ -1,5 +1,4 @@
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -9,7 +8,7 @@ struct Line;
 
 struct Point {
     double x, y;
-    Point();
+    Point() = default;
     Point(double x, double y);
     void operator+=(const Point& p);
     void operator-=(const Point& p);
@@ -58,7 +57,7 @@ class Polygon : public Shape {
     size_t verticesCount();
     std::vector<Point> getVertices();
     bool isConvex() const;
-    bool containsPoint(const Point& point) const override;  //доделать
+    bool containsPoint(const Point& point) const override;
     double perimeter() const override;
     double area() const override;
     void rotate(const Point& center, double angle) override;
@@ -131,7 +130,7 @@ bool operator==(const Line& l1, const Line& l2);
 
 bool operator==(const Point& p1, const Point& p2);
 
-double d(const Point& p);
+double distance(const Point& p);
 
 Point operator+(const Point& p1, const Point& p2);
 
@@ -145,15 +144,13 @@ Point operator*(double k, const Point& p);
 
 Point operator/(const Point& p, double k);
 
-double d(const Point& p, const Line& l);
+double distance(const Point& p, const Line& l);
 
-Line perp(const Point& p1, const Point& p2);
+Line bisection(const Point& p1, const Point& p2);
 
-Line perp(const Point& p, const Line& l);
+Line perpendicular(const Point& p, const Line& l);
 
 Point cross(const Line& l1, const Line& l2);
-
-int mod(int a, int b);
 
 bool operator==(const Ellipse& a, const Ellipse& b);
 
@@ -163,19 +160,19 @@ bool operator==(const Shape& a, const Shape& b);
 
 bool isCongruentTo(const Ellipse& a, const Ellipse& b);
 
-bool isCongruentTo(const Polygon& a, const Polygon& b);  //Реализовать!!!
+bool isCongruentTo(const Polygon& a, const Polygon& b);
 
 bool isCongruentTo(const Shape& a, const Shape& b);
 
 bool isSimilarTo(const Ellipse& a, const Ellipse& b);
 
-bool isSimilarTo(const Polygon& a, const Polygon& b);  //Реализовать!!!
+bool isSimilarTo(const Polygon& a, const Polygon& b);
 
 bool isSimilarTo(const Shape& a, const Shape& b);
 
-double cr_prod(const Point& a, const Point& b);
+double cross_product(const Point& a, const Point& b);
 
-double sc_prod(const Point& a, const Point& b);
+double dot_product(const Point& a, const Point& b);
 
 int sign(double d);
 

@@ -4,11 +4,11 @@ bool operator==(const Point& p1, const Point& p2) {
     return (std::abs(p1.x - p2.x) < eps) && (std::abs(p1.y - p2.y) < eps);
 }
 
-double cr_prod(const Point& a, const Point& b) {
+double cross_product(const Point& a, const Point& b) {
     return a.x * b.y - a.y * b.x;
 }
 
-double sc_prod(const Point& a, const Point& b) {
+double dot_product(const Point& a, const Point& b) {
     return a.x * b.x + a.y * b.y;
 }
 
@@ -17,7 +17,7 @@ int sign(double d) {
 }
 
 bool between(const Point& p, const Point& p1, const Point& p2) {
-    return sign(sc_prod(p - p2, p - p1)) == -1;
+    return sign(dot_product(p - p2, p - p1)) == -1;
 }
 
 double det(double a11, double a12, double a21, double a22) {
@@ -68,11 +68,11 @@ Point operator/(const Point& p, double k) {
     return {p.x / k, p.y / k};
 }
 
-double d(const Point& p) {
+double distance(const Point& p) {
     return std::sqrt(p.x * p.x + p.y * p.y);
 }
 
-double d(const Point& p, const Line& l) {
+double distance(const Point& p, const Line& l) {
     return std::abs(l.a * p.x + l.b * p.y + l.c) /
            std::sqrt(l.a * l.a + l.b * l.b);
 }
@@ -96,11 +96,11 @@ bool operator==(const Line& l1, const Line& l2) {
 
 Line::Line() {}
 
-Line perp(const Point& p, const Line& l) {
+Line perpendicular(const Point& p, const Line& l) {
     return Line(-l.b, l.a, p.x * l.b - p.y * l.a);
 }
 
-Line perp(const Point& p1, const Point& p2) {
+Line bisection(const Point& p1, const Point& p2) {
     double b = (p1.y - p2.y) / (p1.x - p2.x);
     double c = -0.5 * (p1.x + p2.x + b * (p1.y + p2.y));
     return Line(1, b, c);
@@ -114,17 +114,17 @@ Point cross(const Line& l1, const Line& l2) {
 }
 
 Circle Triangle::inscribedCircle() {
-    Point center =
-        v[0] +
-        (d(v[2] - v[0]) * (v[1] - v[0]) + d(v[1] - v[0]) * (v[2] - v[0])) /
-            (d(v[1] - v[0]) + d(v[2] - v[1]) + d(v[0] - v[2]));
-    double radius = d(center, Line(v[0], v[1]));
+    Point center = v[0] + (distance(v[2] - v[0]) * (v[1] - v[0]) +
+                           distance(v[1] - v[0]) * (v[2] - v[0])) /
+                              (distance(v[1] - v[0]) + distance(v[2] - v[1]) +
+                               distance(v[0] - v[2]));
+    double radius = distance(center, Line(v[0], v[1]));
     return Circle(center, radius);
 }
 
 Circle Triangle::circumscribedCircle() {
-    Point center = cross(perp(v[0], v[1]), perp(v[1], v[2]));
-    double radius = d(v[0] - center);
+    Point center = cross(bisection(v[0], v[1]), bisection(v[1], v[2]));
+    double radius = distance(v[0] - center);
     return Circle(center, radius);
 }
 
@@ -133,7 +133,8 @@ Point Triangle::centroid() {
 }
 
 Point Triangle::orthocenter() {
-    return cross(perp(v[0], Line(v[1], v[2])), perp(v[1], Line(v[0], v[2])));
+    return cross(perpendicular(v[0], Line(v[1], v[2])),
+                 perpendicular(v[1], Line(v[0], v[2])));
 }
 
 Line Triangle::EulerLine() {
@@ -158,7 +159,7 @@ std::pair<Point, Point> Ellipse::focuses() const {
 }
 
 double Ellipse::c() const {
-    return d(p1 - p2) / 2;
+    return distance(p1 - p2) / 2;
 }
 
 double Ellipse::eccentricity() const {
@@ -166,8 +167,8 @@ double Ellipse::eccentricity() const {
 }
 
 std::pair<Line, Line> Ellipse::directrices() const {
-    return {perp(p2 - p1, center() + 0.5 * (p2 - p1) * c() / a),
-            perp(p2 - p1, center() - 0.5 * (p2 - p1) * c() / a)};
+    return {bisection(p2 - p1, center() + 0.5 * (p2 - p1) * c() / a),
+            bisection(p2 - p1, center() - 0.5 * (p2 - p1) * c() / a)};
 }
 
 Point Ellipse::center() const {
@@ -206,7 +207,7 @@ void Ellipse::scale(const Point& center, double coefficient) {
 Ellipse::Ellipse() {}
 
 bool Ellipse::containsPoint(const Point& point) const {
-    return d(point - p1) + d(point - p2) - 2 * a < eps;
+    return distance(point - p1) + distance(point - p2) - 2 * a < eps;
 }
 
 double Ellipse::b() const {
@@ -258,9 +259,9 @@ std::vector<Point> Polygon::getVertices() {
 Polygon::Polygon(){};
 
 double Polygon::perimeter() const {
-    double ans = d(v.back() - v[0]);
+    double ans = distance(v.back() - v[0]);
     for (size_t i = 1; i < v.size(); ++i) {
-        ans += d(v[i] - v[i - 1]);
+        ans += distance(v[i] - v[i - 1]);
     }
     return ans;
 }
@@ -298,13 +299,13 @@ void Polygon::scale(const Point& center, double coefficient) {
 }
 
 bool Polygon::containsPoint(const Point& point) const {
-    Point tmp(0.354354, 0.734634);
+    Point tmp{0, 0};
     Line l(point, tmp);
-    int sz = this->sz();
+    int n = sz();
     int count = 0;
-    for (int i = 0; i < sz; ++i) {
-        Point p = cross(l, Line(v[i], v[mod(i + 1, sz)]));
-        if (!between(point, p, tmp) && between(p, v[mod(i + 1, sz)], v[i])) {
+    for (int i = 0; i < n; ++i) {
+        Point p = cross(l, Line(v[i], v[(i + 1) % n]));
+        if (!between(point, p, tmp) && between(p, v[(i + 1) % n], v[i])) {
             ++count;
         }
     }
@@ -312,11 +313,11 @@ bool Polygon::containsPoint(const Point& point) const {
 }
 
 bool Polygon::isConvex() const {
-    int sz = this->sz();
-    int x = sign(cr_prod(v[1] - v[0], v[2] - v[1]));
-    for (int i = 0; i < sz; ++i) {
-        int y = sign(cr_prod(v[mod(i + 1, sz)] - v[i],
-                             v[mod(i + 2, sz)] - v[mod(i + 1, sz)]));
+    int n = sz();
+    int x = sign(cross_product(v[1] - v[0], v[2] - v[1]));
+    for (int i = 0; i < n; ++i) {
+        int y = sign(cross_product(v[(i + 1) % n] - v[i],
+                                   v[(i + 2) % n] - v[(i + 1) % n]));
         if (y != x) {
             return false;
         }
@@ -325,15 +326,12 @@ bool Polygon::isConvex() const {
 }
 
 Point Polygon::operator[](int i) const {
-    return v[mod(i, sz())];
+    int n = sz();
+    return v[(i % n + n) % n];
 }
 
 int Polygon::sz() const {
     return static_cast<int>(v.size());
-}
-
-int mod(int a, int b) {
-    return (a % b + b) % b;
 }
 
 bool operator==(const Polygon& a, const Polygon& b) {
@@ -377,7 +375,7 @@ void Point::reflect(const Point& center) {
 }
 
 void Point::reflect(const Line& axis) {
-    this->reflect(cross(axis, perp(*this, axis)));
+    reflect(cross(axis, perpendicular(*this, axis)));
 }
 
 void Point::scale(const Point& center, double coefficient) {
@@ -386,8 +384,6 @@ void Point::scale(const Point& center, double coefficient) {
 
 Point::Point(double x, double y) : x(x), y(y) {}
 
-Point::Point() {}
-
 Circle::Circle(const Point& p, double r) : Ellipse(p, p, 2 * r) {}
 
 double Circle::radius() {
@@ -395,9 +391,9 @@ double Circle::radius() {
 }
 
 Rectangle::Rectangle(const Point& p1, const Point& p2, double q) {
-    double y = d(p1 - p2) / std::sqrt(q * q + 1);
+    double y = distance(p1 - p2) / std::sqrt(q * q + 1);
     Point p = p2;
-    p.scale(p1, y / d(p1 - p2));
+    p.scale(p1, y / distance(p1 - p2));
     p.rotate(p1, atan(q) * 180 / M_PI);
     Point pp = p;
     pp.reflect((p1 + p2) / 2);
@@ -415,11 +411,11 @@ std::pair<Line, Line> Rectangle::diagonals() {
 Rectangle::Rectangle() {}
 
 Circle Square::circumscribedCircle() {
-    return Circle(center(), d(center() - v[0]));
+    return Circle(center(), distance(center() - v[0]));
 }
 
 Circle Square::inscribedCircle() {
-    return Circle(center(), d(v[0] - v[1]) / 2);
+    return Circle(center(), distance(v[0] - v[1]) / 2);
 }
 
 Square::Square(const Point& p1, const Point& p2) : Rectangle(p1, p2, 1) {}
@@ -467,10 +463,10 @@ bool equalAngles(const Polygon& a, const Polygon& b, int k, int sign) {
         Point pa2 = a[i] - a[i - 1];
         Point pb1 = b[(i + 1 + k) * sign] - b[(i + k) * sign];
         Point pb2 = b[(i + k) * sign] - b[(i - 1 + k) * sign];
-        double a1 = sc_prod(pa1, pa2) * d(pb1) * d(pb2);
-        double b1 = sc_prod(pb1, pb2) * d(pa1) * d(pa2);
-        double a2 = cr_prod(pa1, pa2) * d(pb1) * d(pb2);
-        double b2 = cr_prod(pb1, pb2) * d(pa1) * d(pa2);
+        double a1 = dot_product(pa1, pa2) * distance(pb1) * distance(pb2);
+        double b1 = dot_product(pb1, pb2) * distance(pa1) * distance(pa2);
+        double a2 = cross_product(pa1, pa2) * distance(pb1) * distance(pb2);
+        double b2 = cross_product(pb1, pb2) * distance(pa1) * distance(pa2);
         if (!((std::abs(a1 - b1) < eps) &&
               ((std::abs(a2 - b2) < eps) || (std::abs(a2 + b2) < eps)))) {
             return false;
@@ -481,14 +477,15 @@ bool equalAngles(const Polygon& a, const Polygon& b, int k, int sign) {
 
 bool similarSides(const Polygon& a, const Polygon& b, int k, bool equal,
                   int sign) {
-    double q = d(a[1] - a[0]) / d(b[(k + 1) * sign] - b[k * sign]);
+    double q =
+        distance(a[1] - a[0]) / distance(b[(k + 1) * sign] - b[k * sign]);
     if (equal && (std::abs(q - 1) > eps)) {
         return false;
     }
     int sz = a.sz();
     for (int i = 0; i < sz; ++i) {
-        double a1 = d(a[i + 1] - a[i]);
-        double b1 = d(b[(i + 1 + k) * sign] - b[(i + k) * sign]);
+        double a1 = distance(a[i + 1] - a[i]);
+        double b1 = distance(b[(i + 1 + k) * sign] - b[(i + k) * sign]);
         if (std::abs(a1 / b1 - q) > eps) {
             return false;
         }
